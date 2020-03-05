@@ -31,11 +31,11 @@ var shippmentValidator = require('../resources/validators/shipping_validator')
  * @property {Date} shippingDate - the initial date of the shipping
  * @property {String} lastUpdate - one of the steps in your new habit
  * @property {Updates[]} plannedTransactions - a List of updates
- * @property {String} lastSignature - last block with a signature 
+ * @property {String} lastShippmentSignature - last block with a signature 
  * @property {String} shippingSignature - signature of stringfy of upper proprerties, from the owner
  * @property {Bool} active - shippment was complete ?
  * @property {Number} doneCount - number of done updates
- * @property {String} currentHash - Hash of stringfy of last Update object
+ * @property {String} currentUpdateHash - Hash of stringfy of last Update object
  * @property {transactionDescriptor[]} updates - An update consists of (DA)
  * @property {String[]} signatures - steps to complete your goal
  */
@@ -48,8 +48,43 @@ var shippmentValidator = require('../resources/validators/shipping_validator')
  * @todo filters
  */
 router.get('/', function(req, res, next) {
-    shippmentDb.getAllActiveObjectives()
+    shippmentDb.getAllActiveShippment().then((resp) => res.send(resp)).catch((err) => res.send(err))
+
 });
+
+/**
+ * Sign occurence of object
+ */
+router.post('/', function(req, res, next) {
+    let {
+        shippingDate,
+        shippingPlannedTransactions,
+        insertionTimeStamp,
+        lastShippmentSignature, //need to autocomlet
+        shippingOwnerSignature
+    } = req.body
+    let shippment = {
+        shippingDate: shippingDate,
+        lastUpdate: insertionTimeStamp,
+        plannedTransactions: JSON.parse(shippingPlannedTransactions),
+        lastShippmentSignature: lastShippmentSignature,
+        shippingSignature: shippingOwnerSignature,
+        active: true,
+        doneCount: 0,
+        currentUpdateHash: "",
+        updates: [],
+        signatures: []
+    }
+
+    shippmentValidator.validateTransactionObject(shippment.plannedTransactions).catch((res) => console.log(res))
+
+    shippmentDb.insertNewShippment(shippment).then((resp) => res.send(resp)).catch((err) => res.send(err))
+
+
+
+});
+
+
 
 /**
  * Get last hash of and shippment
@@ -70,34 +105,33 @@ router.get('/next/:id', function(req, res, next) {
 /**
  * Sign occurence of object
  */
-router.post('/:id', function(req, res, next) {
-    let { user, signature, updateDate, lastUpdateHash, transactionType, productBrand, productType } = req.body
+router.post('/:shippmentId', function(req, res, next) {
+    let {
+        user,
+        signature,
+        lastUpdateHash, // get from /:id
+        transactionType,
+        productBrand,
+        productType
+    } = req.body
 
-});
+    let { shippmentId } = req.params
 
-
-/**
- * Sign occurence of object
- */
-router.post('/', function(req, res, next) {
-    let { shippingDate, shippingPlannedTransactions, shippingOwnerSignature } = req.body
-    let shippment = {
-        shippingDate: shippingDate,
-        lastUpdate: new Date(),
-        plannedTransactions: shippingPlannedTransactions,
-        shippingSignature: shippingOwnerSignature,
-        active: true,
-        doneCount: 0,
-        currentHash: "",
-        updates: [],
-        signatures: []
+    let update = {
+        updateDate: new Date(),
+        lastUpdateHash: lastUpdateHash,
+        shippmentUpdateDescriptor: {
+            transactionType: transactionType,
+            productBrand: productBrand,
+            productType: productType
+        }
     }
 
-    validateTransactionObject(shippment.plannedTransactions)
-
-    shippmentDb.insertNewShippment(shippment)
-
+    shippmentDb.insertUpdate(update, signature, shippmentId).then((resp) => res.send(resp)).catch((err) => res.send(err))
 
 });
+
+
+
 
 module.exports = router;
