@@ -42,9 +42,6 @@ async function insertNewShippment(shippment) {
     })
 }
 
-
-
-
 /**
  * Push new update to shippment
  * @param {Update} update Array containing objective information
@@ -99,6 +96,79 @@ async function insertUpdate(update, signature, shippmentId) {
     })
 }
 
+async function checkBlockCloseBlock(shippmentId) {
+    let shippmentDb = global.conn.collection("shipments")
+    return new Promise(function(resolve, reject) {
+
+        shippmentDb.findOne({ _id: ObjectId(shippmentId) }).then((shippingInfo) => {
+
+            if (shippingInfo.doneCount == shippingInfo.totalPlanned) {
+                shippmentDb.updateOne({ _id: ObjectId(shippmentId) }, { $set: { active: false } }, { upsert: false }).then(resp_active => {
+                    if (resp_active.result.nModified == 1) {
+
+                        //TODO save file
+                        resolve({
+                            "status": "success",
+                            "data": "DEACTIVATED"
+                        })
+
+
+                    } else {
+                        resolve({
+                            "status": "fail",
+                            "data": "DEACTIVATIONFAILED"
+                        })
+                    }
+                })
+            } else {
+                resolve({
+                    "status": "success",
+                    "data": {
+                        description: "BLOCK_CHECKED",
+                        data: shippingInfo
+                    }
+                })
+            }
+
+
+
+        })
+
+    })
+
+}
+
+async function updatePlusDone(shippmentId) {
+    let shippmentDb = global.conn.collection("shipments")
+    return new Promise(function(resolve, reject) {
+        shippmentDb.updateOne({ _id: ObjectId(shippmentId) }, { $inc: { doneCount: +1 } }, { upsert: false }).then(resp_inter => {
+
+
+
+            if (resp_inter.result.nModified == 1) {
+
+                shippmentDb.findOne({ _id: ObjectId(shippmentId) }).then((shippingInfo) => {
+
+                    if (shippingInfo.doneCount == shippingInfo.totalPlanned) {
+                        resolve({
+                            "status": "success",
+                            "data": "NEEDDEACTIVATION"
+                        })
+                    } else {
+                        resolve({ "status": "success", "data": "INSERTED_SECOND SIGN" })
+                    }
+
+
+
+                })
+
+            } else {
+                reject({ "status": "error", "data": "WRONGTOKENORUNKNOWERROR2" }) //TODO: do better status
+            }
+        })
+    })
+
+}
 
 /**
  * Push new update to shippment
@@ -113,40 +183,10 @@ async function signSignature(signature, shippmentId) {
         shippmentDb.updateOne({ _id: ObjectId(shippmentId) }, { $push: { signatures: signature } }, { upsert: false }).then(resp => {
 
             if (resp.result.nModified == 1) {
-
-                shippmentDb.updateOne({ _id: ObjectId(shippmentId) }, { $inc: { doneCount: +1 } }, { upsert: false }).then(resp_inter => {
-
-
-
-                    if (resp_inter.result.nModified == 1) {
-                        shippmentDb.findOne({ _id: ObjectId(shippmentId) }).then((shippingInfo) => {
-
-                            if (shippingInfo.doneCount == shippingInfo.totalPlanned) {
-                                shippmentDb.updateOne({ _id: ObjectId(shippmentId) }, { $set: { active: false } }, { upsert: false }).then(resp_active => {
-                                    if (resp_active.result.nModified == 1) {
-
-                                        //TODO save file
-                                        resolve({
-                                            "status": "success",
-                                            "data": "DEACTIVATED"
-                                        })
-
-
-                                    }
-                                })
-                            } else {
-                                resolve({ "status": "success", "data": "INSERTED_SECOND SIGN" })
-                            }
-
-
-
-                        })
-
-
-                    } else {
-                        reject({ "status": "error", "data": "WRONGTOKENORUNKNOWERROR2" }) //TODO: do better status
-                    }
+                updatePlusDone(shippmentId).then(() => {
+                    checkBlockCloseBlock(shippmentId).then((resp) => resolve(resp))
                 })
+
             } else {
                 reject({ "status": "error", "data": "WRONGTOKENORUNKNOWERROR2" }) //TODO: do better status
             }
@@ -156,4 +196,4 @@ async function signSignature(signature, shippmentId) {
 
 
 
-module.exports = { getAllActiveShippment, insertNewShippment, insertUpdate, signSignature }
+module.exports = { getAllActiveShippment, insertNewShippment, insertUpdate, signSignature, checkBlockCloseBlock }

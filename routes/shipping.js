@@ -95,13 +95,15 @@ router.post('/', function(req, res, next) {
  */
 router.get('/:id', function(req, res, next) {
 
+
 });
 
 /**
  * Get what needs to be done next for auto completition & error checking if product is missing
  */
-router.get('/next/:id', function(req, res, next) {
-
+router.get('/next/:shippmentId', function(req, res, next) {
+    let { shippmentId } = req.params
+    shippmentDb.checkBlockCloseBlock(shippmentId).then((resp) => res.send(resp.data.data.plannedTransactions[resp.data.data.doneCount]))
 });
 
 
