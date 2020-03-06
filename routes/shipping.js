@@ -29,10 +29,11 @@ var shippmentValidator = require('../resources/validators/shipping_validator')
  * 
  * @typedef {Object} Shipping
  * @property {Date} shippingDate - the initial date of the shipping
- * @property {String} lastUpdate - one of the steps in your new habit
+ * @property {String} lastUpdate - one of the steps in your updatesnew habit
  * @property {Updates[]} plannedTransactions - a List of updates
- * @property {String} lastShippmentSignature - last block with a signature 
+ * @property {Number} totalPlanned - number of done updates
  * @property {String} shippingSignature - signature of stringfy of upper proprerties, from the owner
+ * @property {String} lastShippmentSignature - last block with a signature 
  * @property {Bool} active - shippment was complete ?
  * @property {Number} doneCount - number of done updates
  * @property {String} currentUpdateHash - Hash of stringfy of last Update object
@@ -67,9 +68,11 @@ router.post('/', function(req, res, next) {
         shippingDate: shippingDate,
         lastUpdate: insertionTimeStamp,
         plannedTransactions: JSON.parse(shippingPlannedTransactions),
+        totalPlanned: JSON.parse(shippingPlannedTransactions).length,
         lastShippmentSignature: lastShippmentSignature,
         shippingSignature: shippingOwnerSignature,
         active: true,
+        adultered: false,
         doneCount: 0,
         currentUpdateHash: "",
         updates: [],
@@ -112,7 +115,8 @@ router.post('/:shippmentId', function(req, res, next) {
         lastUpdateHash, // get from /:id
         transactionType,
         productBrand,
-        productType
+        productType,
+        productQuantity
     } = req.body
 
     let { shippmentId } = req.params
@@ -123,11 +127,28 @@ router.post('/:shippmentId', function(req, res, next) {
         shippmentUpdateDescriptor: {
             transactionType: transactionType,
             productBrand: productBrand,
-            productType: productType
+            productType: productType,
+            quantity: productQuantity
         }
     }
 
     shippmentDb.insertUpdate(update, signature, shippmentId).then((resp) => res.send(resp)).catch((err) => res.send(err))
+
+});
+
+
+/**
+ * Sign occurence of object
+ */
+router.post('/2/:shippmentId', function(req, res, next) {
+    let {
+        user,
+        signature
+    } = req.body
+
+    let { shippmentId } = req.params
+
+    shippmentDb.signSignature(signature, shippmentId).then((resp) => res.send(resp)).catch((err) => res.send(err))
 
 });
 

@@ -1,6 +1,8 @@
 var ObjectId = require('mongodb').ObjectId;
 
 
+
+
 /**
  * 
  * @typedef {Object} UpdateSigned
@@ -16,8 +18,9 @@ var ObjectId = require('mongodb').ObjectId;
  * Get all shippments active for current blockchain
  */
 async function getAllActiveShippment() {
+    let shippmentDb = global.conn.collection("shipments")
     return new Promise(function(resolve, reject) {
-        global.conn.collection("shipments").find({ active: true }).project({ _id: 1, lastUpdateHash: 1 }).toArray((err, shippmentsInfo) => {
+        shippmentDb.find({ active: true }).project({ _id: 1, lastUpdateHash: 1, adultered: 1 }).toArray((err, shippmentsInfo) => {
             resolve({ "status": "success", "data": shippmentsInfo })
         })
     })
@@ -27,8 +30,9 @@ async function getAllActiveShippment() {
  * Get all shippments active for current blockchain
  */
 async function insertNewShippment(shippment) {
+    let shippmentDb = global.conn.collection("shipments")
     return new Promise(function(resolve, reject) {
-        global.conn.collection("shipments").insertOne(shippment, (error, resp) => {
+        shippmentDb.insertOne(shippment, (error, resp) => {
             if (error) {
                 reject({ "status": "error", "data": error })
             }
@@ -50,18 +54,32 @@ async function insertNewShippment(shippment) {
  * @returns {UpdateSigned} Signed version of update to be signed
  */
 async function insertUpdate(update, signature, shippmentId) {
-
+    let shippmentDb = global.conn.collection("shipments")
     return new Promise(function(resolve, reject) {
-        global.conn.collection("shipments").updateOne({ _id: ObjectId(shippmentId) }, { $push: { updates: update } }, { upsert: false }).then(resp => {
+        shippmentDb.updateOne({ _id: ObjectId(shippmentId) }, { $push: { updates: update } }, { upsert: false }).then(resp => {
 
             if (resp.result.nModified == 1) {
-                console.log("teste");
 
-                global.conn.collection("shipments").updateOne({ _id: ObjectId(shippmentId) }, { $push: { signatures: signature } }, { upsert: false }).then(resp_inter => {
+                shippmentDb.updateOne({ _id: ObjectId(shippmentId) }, { $push: { signatures: signature } }, { upsert: false }).then(resp_inter => {
 
+                    shippmentDb.findOne({ _id: ObjectId(shippmentId) }).then((shipObj) => {
+                        if (shipObj.plannedTransactions[shipObj.doneCount].quantity != update.shippmentUpdateDescriptor.quantity) {
+                            shippmentDb.updateOne({ _id: ObjectId(shippmentId) }, { $set: { adultered: true } }, { upsert: false }).then(resp_active => {
+                                if (resp_active.result.nModified == 1) {
+
+                                    resolve({
+                                        "status": "error",
+                                        "data": "PRODUCTADULTEREDCONTACTAMBEV"
+                                    })
+
+
+                                }
+                            })
+                        }
+                    })
 
                     if (resp_inter.result.nModified == 1) {
-                        console.log(resp_inter.result, 11111);
+
                         update.signature = signature
                         resolve({
                             "status": "success",
@@ -89,14 +107,46 @@ async function insertUpdate(update, signature, shippmentId) {
  * @param {String} shippmentId _id of the shipment
  * @todo chek user and signature
  */
-async function signSignature(update, signature, shippmentId) {
-
+async function signSignature(signature, shippmentId) {
+    let shippmentDb = global.conn.collection("shipments")
     return new Promise(function(resolve, reject) {
-        global.conn.collection("shipments").updateOne({ _id: ObjectId(shippmentId) }, { $push: { signatures: signature } }, { upsert: false }).then(resp_inter => {
+        shippmentDb.updateOne({ _id: ObjectId(shippmentId) }, { $push: { signatures: signature } }, { upsert: false }).then(resp => {
 
-            if (resp_inter.result.nModified == 1) {
-                console.log("entrou aqui2");
-                resolve({ "status": "success", "data": "INSERTED_SECOND SIGN" })
+            if (resp.result.nModified == 1) {
+
+                shippmentDb.updateOne({ _id: ObjectId(shippmentId) }, { $inc: { doneCount: +1 } }, { upsert: false }).then(resp_inter => {
+
+
+
+                    if (resp_inter.result.nModified == 1) {
+                        shippmentDb.findOne({ _id: ObjectId(shippmentId) }).then((shippingInfo) => {
+
+                            if (shippingInfo.doneCount == shippingInfo.totalPlanned) {
+                                shippmentDb.updateOne({ _id: ObjectId(shippmentId) }, { $set: { active: false } }, { upsert: false }).then(resp_active => {
+                                    if (resp_active.result.nModified == 1) {
+
+                                        //TODO save file
+                                        resolve({
+                                            "status": "success",
+                                            "data": "DEACTIVATED"
+                                        })
+
+
+                                    }
+                                })
+                            } else {
+                                resolve({ "status": "success", "data": "INSERTED_SECOND SIGN" })
+                            }
+
+
+
+                        })
+
+
+                    } else {
+                        reject({ "status": "error", "data": "WRONGTOKENORUNKNOWERROR2" }) //TODO: do better status
+                    }
+                })
             } else {
                 reject({ "status": "error", "data": "WRONGTOKENORUNKNOWERROR2" }) //TODO: do better status
             }
@@ -106,4 +156,4 @@ async function signSignature(update, signature, shippmentId) {
 
 
 
-module.exports = { getAllActiveShippment, insertNewShippment, insertUpdate }
+module.exports = { getAllActiveShippment, insertNewShippment, insertUpdate, signSignature }
