@@ -5,6 +5,8 @@ var logger = require('morgan');
 
 var shippingRouter = require('./routes/shipping');
 
+var packageRouter = require('./routes/package');
+
 var app = express();
 
 app.use(logger('dev'));
@@ -13,7 +15,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 app.use('/shipping', shippingRouter);
-
+app.use('/package', packageRouter);
 
 
 module.exports = app;
