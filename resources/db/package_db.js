@@ -111,6 +111,8 @@ async function addChildStore(packageId, storeId) {
  * 
  */
 async function consumePacks(packageId, quantity) {
+    console.log(packageId, quantity);
+    
     return new Promise(function (resolve, reject) {
         global.conn.collection("packages").updateOne({ _id: ObjectId(packageId) }, { $inc: { consumedPacks: quantity  } }, { upsert: false }).then(resp => {
             if (resp.result.nModified == 1) {
