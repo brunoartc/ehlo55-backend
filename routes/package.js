@@ -42,5 +42,19 @@ router.post('/', function(req, res, next) {
 });
 
 
+router.get('/:packageId', function(req, res, next) {
+    let { packageId } = req.params
+    packageDb.findPackageInfo(packageId).then((resp) => res.send(resp)).catch((err) => res.send(err))
+
+});
+
+
+router.get('/store/:storeId', function(req, res, next) {
+    let { storeId } = req.params
+    packageDb.findAllPackagesCurrentInStore(storeId).then((resp) => res.send(resp)).catch((err) => res.send(err))
+
+});
+
+
 
 module.exports = router;

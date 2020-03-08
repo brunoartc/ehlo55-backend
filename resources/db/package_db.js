@@ -41,4 +41,51 @@ async function insertNewPackage(shippment) {
     })
 }
 
-module.exports = { insertNewPackage }
+
+
+/**
+ * Find more package info
+ * @param {String} packageId - id of the package being searched
+ * 
+ */
+async function findPackageInfo(packageId) {
+    return new Promise(function (resolve, reject) {
+        global.conn.collection("packages").findOne({ _id: ObjectId(packageId) }).then((packageObj) => {
+            if (packageId != undefined) {
+                resolve({
+                    "status": "success", "data": {
+                        validThru: packageObj.validThru,
+                        childStoreIds: packageObj.childStoreIds,
+                        totalPacks: packageObj.totalPacks,
+                        consumedPacks: packageObj.consumedPacks
+                    }
+                })
+            }
+        })
+    })
+}
+
+
+/**
+ * Find more package info
+ * @param {String} storeId - store id to get packages info
+ * 
+ */
+async function findAllPackagesCurrentInStore(storeId) {
+    return new Promise(function (resolve, reject) {
+        global.conn.collection("packages").find({ childStoreId: ObjectId(storeId), active: true }).project({ validThru: 1 }).toArray((err, packageObjs) => {
+
+            resolve({
+                "status": "success", "data": {
+                    warn: "BETAINFO",
+                    packageObjs
+                }
+            })
+
+        })
+    })
+}
+
+
+
+module.exports = { insertNewPackage, findPackageInfo, findAllPackagesCurrentInStore }
