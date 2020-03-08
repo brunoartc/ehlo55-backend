@@ -8,7 +8,7 @@ var ObjectId = require('mongodb').ObjectId;
  * @property {Number} consumedPacks the total number of consumed Packs
  * @property {Bool} active the package has any Packs left ?
  * @property {String} geolocation the geolocation of the package (lat|log)
- * @property {String[]} childStoreId the Id where the known packs are located
+ * @property {String[]} childStoreIds the Id where the known packs are located
  * 
  */
 
@@ -73,7 +73,7 @@ async function findPackageInfo(packageId) {
  */
 async function findAllPackagesCurrentInStore(storeId) {
     return new Promise(function (resolve, reject) {
-        global.conn.collection("packages").find({ childStoreId: ObjectId(storeId), active: true }).project({ validThru: 1 }).toArray((err, packageObjs) => {
+        global.conn.collection("packages").find({ childStoreIds: ObjectId(storeId), active: true }).project({ validThru: 1 }).toArray((err, packageObjs) => {
 
             resolve({
                 "status": "success", "data": {
@@ -94,7 +94,7 @@ async function findAllPackagesCurrentInStore(storeId) {
  */
 async function addChildStore(packageId, storeId) {
     return new Promise(function (resolve, reject) {
-        global.conn.collection("packages").updateOne({ _id: ObjectId(packageId) }, { $push: { childStoreId: ObjectId(storeId) } }, { upsert: false }).then(resp => {
+        global.conn.collection("packages").updateOne({ _id: ObjectId(packageId) }, { $push: { childStoreIds: ObjectId(storeId) } }, { upsert: false }).then(resp => {
             if (resp.result.nModified == 1) {
                 resolve({
                     status: "success",
