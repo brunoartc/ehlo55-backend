@@ -7,6 +7,8 @@ var packageDb = require('./package_db')
  * @typedef {Object} Pack
  * @property {String} identificationScheme the patter that identifies that Pack physically
  * @property {Number} validThru the expiration date of the pack
+ * @property {Number} quantity quantity of the pack on the store
+ * @property {Bool} active the product is active on the store?
  * @todo mongo scheme to index validThru
  * 
  */
@@ -30,7 +32,7 @@ function makeRandomSchema(length) {
  * @param {Pack} pack The new pack in store stock
  * 
  */
-async function insertNewPack(packageId, storeID, quantity) {
+async function insertNewPack(packageId, storeId, quantity) {
 
     return new Promise(function (resolve, reject) {
 
@@ -40,18 +42,18 @@ async function insertNewPack(packageId, storeID, quantity) {
             let pack = {
                 validThru: packageInfo.data.validThru,
                 identificationScheme: makeRandomSchema(8),
-                valid: true,
-                owner: ObjectId(storeID),
+                active: true,
+                owner: ObjectId(storeId),
                 quantity: parseInt(quantity)
             }
 
 
             //TODO make function
             // remove confliting package assume as consumed -- possible bug
-            global.conn.collection("packages").findOne({ owner: ObjectId(storeID), valid: true, identificationScheme: pack.identificationScheme }).then((packObj) => {
+            global.conn.collection("packages").findOne({ owner: ObjectId(storeId), active: true, identificationScheme: pack.identificationScheme }).then((packObj) => {
 
                 if (packObj != undefined) {
-                    global.conn.collection("storePacks").updateOne({ owner: ObjectId(storeID), valid: true, identificationScheme: pack.identificationScheme }, { valid: { $set: false } }, { upsert: false }).then(resp => {
+                    global.conn.collection("storePacks").updateOne({ owner: ObjectId(storeId), active: true, identificationScheme: pack.identificationScheme }, { $set: { active: false } }, { upsert: false }).then(resp => {
 
 
                         if (resp.result.nModified == 1) {
@@ -72,7 +74,7 @@ async function insertNewPack(packageId, storeID, quantity) {
                     reject({ "status": "error", "data": "UNKNOWNERROR" })
                 }
 
-                packageDb.addChildStore(packageId, storeID)
+                packageDb.addChildStore(packageId, storeId)
 
                 resolve({
                     "status": "success", "data": {
@@ -92,13 +94,32 @@ async function insertNewPack(packageId, storeID, quantity) {
 }
 
 
-async function removeFromStockHint(storeID) {
-    global.conn.collection("storePacks").find({ childStoreId: ObjectId(storeId), active: true, validThru: { $gte: new Date() } }).sort({ validThru: 1 }).project({ identificationScheme: 1 }).toArray((err, packObjs) => {
+async function removeFromStockHint(storeId) {
+    return new Promise(function (resolve, reject) {
+        global.conn.collection("storePacks").find({ owner: ObjectId(storeId), active: true, validThru: { $gte: new Date() } }).sort({ validThru: 1 }).project({ identificationScheme: 1 }).toArray((err, packObjs) => {
 
-        resolve({
-            "status": "success", "data": {
-                warn: "BETAINFO",
-                packObjs
+            resolve({
+                "status": "success", "data": {
+                    packObjs
+                }
+            })
+
+        })
+    })
+
+}
+
+
+async function deactivatePack(packIdentificationScheme, storeId) {
+    console.log(packIdentificationScheme, storeId);
+
+    return new Promise(function (resolve, reject) {
+        global.conn.collection("storePacks").updateOne({ owner: ObjectId(storeId), active: true, identificationScheme: packIdentificationScheme }, { $set: { active: false } }, function(err, resp) {
+            
+            if (resp.result.nModified == 1) {
+                resolve({ status: "success", data: "DEACTIVATED" })
+            } else {
+                resolve({ status: "error", data: "UNKNOWNPACK" })
             }
         })
 
@@ -110,5 +131,4 @@ async function removeFromStockHint(storeID) {
 
 
 
-
-module.exports = { insertNewPack }
+module.exports = { insertNewPack, removeFromStockHint, deactivatePack }
