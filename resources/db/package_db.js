@@ -21,9 +21,9 @@ var ObjectId = require('mongodb').ObjectId;
  * @param {Package} package The new package entry to be inserted
  * 
  */
-async function insertNewPackage(shippment) {
+async function insertNewPackage(package) {
     return new Promise(function (resolve, reject) {
-        global.conn.collection("packages").insertOne(shippment, (error, resp) => {
+        global.conn.collection("packages").insertOne(package, (error, resp) => {
 
             if (error) {
                 reject({ "status": "error", "data": "UNKNOWNERROR" })
@@ -51,7 +51,7 @@ async function insertNewPackage(shippment) {
 async function findPackageInfo(packageId) {
     return new Promise(function (resolve, reject) {
         global.conn.collection("packages").findOne({ _id: ObjectId(packageId) }).then((packageObj) => {
-            if (packageId != undefined) {
+            if (packageObj != undefined) {
                 resolve({
                     "status": "success", "data": {
                         validThru: packageObj.validThru,
@@ -94,11 +94,29 @@ async function findAllPackagesCurrentInStore(storeId) {
  */
 async function addChildStore(packageId, storeId) {
     return new Promise(function (resolve, reject) {
-        global.conn.collection("packages").updateOne({ _id: ObjectId(packageId) }, { $push: { childStoreId: ObjectID(storeId) } }, { upsert: false }).then(resp => {
+        global.conn.collection("packages").updateOne({ _id: ObjectId(packageId) }, { $push: { childStoreId: ObjectId(storeId) } }, { upsert: false }).then(resp => {
             if (resp.result.nModified == 1) {
                 resolve({
-                    status: success,
-                    data: UPDATED
+                    status: "success",
+                    data: "UPDATED"
+                })
+            }
+        })
+    })
+}
+
+/**
+ * Consume one pack
+ * @param {String} storeId - store id to get packages info
+ * 
+ */
+async function consumePacks(packageId, quantity) {
+    return new Promise(function (resolve, reject) {
+        global.conn.collection("packages").updateOne({ _id: ObjectId(packageId) }, { $inc: { consumedPacks: quantity  } }, { upsert: false }).then(resp => {
+            if (resp.result.nModified == 1) {
+                resolve({
+                    status: "success",
+                    data: "CONSUMED"
                 })
             }
         })
@@ -108,4 +126,4 @@ async function addChildStore(packageId, storeId) {
 
 
 
-module.exports = { insertNewPackage, findPackageInfo, findAllPackagesCurrentInStore, addChildStore }
+module.exports = { insertNewPackage, findPackageInfo, findAllPackagesCurrentInStore, addChildStore, consumePacks }
