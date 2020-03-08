@@ -1,4 +1,4 @@
-
+var ObjectId = require('mongodb').ObjectId;
 
 /**
  * 
@@ -87,5 +87,25 @@ async function findAllPackagesCurrentInStore(storeId) {
 }
 
 
+/**
+ * Find more package info
+ * @param {String} storeId - store id to get packages info
+ * 
+ */
+async function addChildStore(packageId, storeId) {
+    return new Promise(function (resolve, reject) {
+        global.conn.collection("packages").updateOne({ _id: ObjectId(packageId) }, { $push: { childStoreId: ObjectID(storeId) } }, { upsert: false }).then(resp => {
+            if (resp.result.nModified == 1) {
+                resolve({
+                    status: success,
+                    data: UPDATED
+                })
+            }
+        })
+    })
+}
 
-module.exports = { insertNewPackage, findPackageInfo, findAllPackagesCurrentInStore }
+
+
+
+module.exports = { insertNewPackage, findPackageInfo, findAllPackagesCurrentInStore, addChildStore }

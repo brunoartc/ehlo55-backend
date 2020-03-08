@@ -41,6 +41,12 @@ router.post('/', function(req, res, next) {
 
 });
 
+router.put('/:packageId', function(req, res, next) {
+    let { packageId } = req.params
+    let { storeId } = req.body
+    packageDb.addChildStore(packageId, storeId).then((resp) => res.send(resp)).catch((err) => res.send(err))
+
+});
 
 router.get('/:packageId', function(req, res, next) {
     let { packageId } = req.params
