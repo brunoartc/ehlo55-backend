@@ -55,6 +55,11 @@ router.get('/', function(req, res, next) {
 
 /**
  * Sign occurence of object
+ * @param {Date} shippingDate is the date when the shippment should happen
+ * @param {String} shippingPlannedTransactions are the supposed-to-happen transactions 
+ * @param {Date} insertionTimeStamp is the moment when a package is inserted to the shippment
+ * @param {String} lastShippmentSignature last signature tha occurred in this shippment
+ * @param {String} shippingOwnerSignature who owns the last signature
  */
 router.post('/', function(req, res, next) {
     let {
@@ -91,7 +96,6 @@ router.post('/', function(req, res, next) {
 
 /**
  * Get last hash of and shippment
- * @returns 
  */
 router.get('/:id', function(req, res, next) {
 
@@ -100,6 +104,7 @@ router.get('/:id', function(req, res, next) {
 
 /**
  * Get what needs to be done next for auto completition & error checking if product is missing
+ * @param {String} shippmentId
  */
 router.get('/next/:shippmentId', function(req, res, next) {
     let { shippmentId } = req.params
@@ -108,8 +113,16 @@ router.get('/next/:shippmentId', function(req, res, next) {
 
 
 /**
- * Sign occurence of object
- */
+ * Add a package to a shippment
+ * @param {String} user who is inserting or deleting the package into the shippment
+ * @param {String} signature is the signature of the user
+ * @param {String} lastUpdateHash is the tracking data for the last update on the shippment
+ * @param {String} transactionType identify if the package is being added or delivered
+ * @param {String} productBrand is the product brand
+ * @param {String} prodyuctType is the type os the product that is being inserted
+ * @param {Number} productQuantity is the number of packages of the determined product
+ * @param {String} shippmentId identifies the shippment to update
+*/
 router.post('/:shippmentId', function(req, res, next) {
     let {
         user,
@@ -140,7 +153,10 @@ router.post('/:shippmentId', function(req, res, next) {
 
 
 /**
- * Sign occurence of object
+ * Set double signatures confirmation
+ * @param {String} user who is validating the last signature
+ * @param {String} signature is the signature of the user
+ * @param {String} shippmentId identifies the shippment to update
  */
 router.post('/2/:shippmentId', function(req, res, next) {
     let {

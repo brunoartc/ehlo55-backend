@@ -41,6 +41,11 @@ router.post('/', function(req, res, next) {
 
 });
 
+/**
+* Updates the package
+* @param {String} packageId
+* @paran {String} storeId
+*/
 router.put('/:packageId', function(req, res, next) {
     let { packageId } = req.params
     let { storeId } = req.body
@@ -48,13 +53,20 @@ router.put('/:packageId', function(req, res, next) {
 
 });
 
+/**
+* Get infos from the provided packageId
+* @param {String} packageId
+*/
 router.get('/:packageId', function(req, res, next) {
     let { packageId } = req.params
     packageDb.findPackageInfo(packageId).then((resp) => res.send(resp)).catch((err) => res.send(err))
 
 });
 
-
+/**
+* Get infos from the provided store Id
+* @param {String} storeId
+*/
 router.get('/store/:storeId', function(req, res, next) {
     let { storeId } = req.params
     packageDb.findAllPackagesCurrentInStore(storeId).then((resp) => res.send(resp)).catch((err) => res.send(err))

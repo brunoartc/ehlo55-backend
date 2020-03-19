@@ -27,7 +27,8 @@ async function getAllActiveShippment() {
 }
 
 /**
- * Get all shippments active for current blockchain
+ * Insert a new shippment to the current blockchain
+ * @param {String} shippment is the hash of the shippment to be added
  */
 async function insertNewShippment(shippment) {
     let shippmentDb = global.conn.collection("shipments")
@@ -96,6 +97,10 @@ async function insertUpdate(update, signature, shippmentId) {
     })
 }
 
+/**
+* Close the shippment block when completed
+* @param {String} shippmentId is the shippment id to close
+*/
 async function checkBlockCloseBlock(shippmentId) {
     let shippmentDb = global.conn.collection("shipments")
     return new Promise(function(resolve, reject) {
@@ -138,6 +143,10 @@ async function checkBlockCloseBlock(shippmentId) {
 
 }
 
+/**
+* Add one to delivered packages when the package is delivered
+* @param {String} shippmentId is the shippment id to add to the delivered packages
+*/
 async function updatePlusDone(shippmentId) {
     let shippmentDb = global.conn.collection("shipments")
     return new Promise(function(resolve, reject) {
@@ -171,11 +180,9 @@ async function updatePlusDone(shippmentId) {
 }
 
 /**
- * Push new update to shippment
- * @param {UpdateSigned} update Array containing objective information
- * @param {String} signature Signature of the current update by recived user
- * @param {String} shippmentId _id of the shipment
- * @todo chek user and signature
+ * Signs the delivery of a package
+ * @param {String} signature is the digital signature os the shipper
+ * @param {String} shippemntId is the shippment id to add the signature
  */
 async function signSignature(signature, shippmentId) {
     let shippmentDb = global.conn.collection("shipments")

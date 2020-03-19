@@ -88,9 +88,9 @@ async function findAllPackagesCurrentInStore(storeId) {
 
 
 /**
- * Find more package info
+ * Add a store to a package legacy
  * @param {String} storeId - store id to get packages info
- * 
+ * @param {String} packageId package id to add store to
  */
 async function addChildStore(packageId, storeId) {
     return new Promise(function (resolve, reject) {
@@ -107,7 +107,8 @@ async function addChildStore(packageId, storeId) {
 
 /**
  * Consume one pack
- * @param {String} storeId - store id to get packages info
+ * @param {String} packageId - package id to debit quantity from
+ * @param {Number} quantity of items to be consumed from pakcage
  * 
  */
 async function consumePacks(packageId, quantity) {

@@ -9,8 +9,8 @@ var storesDb = require('../resources/db/stores_db')
  * @param {Package} package The new package entry to be inserted
  * 
  */
-router.get('/', function(req, res, next) {
-    let { storeId } = req.body
+router.get('/:storeId', function(req, res, next) {
+    let { storeId } = req.params
     
     storesDb.removeFromStockHint(storeId).then((resp) => res.send(resp)).catch((err) => res.send(err))
 
@@ -18,13 +18,12 @@ router.get('/', function(req, res, next) {
 
 
 /**
- * Get best Pack to use now
- * @param {Package} package The new package entry to be inserted
- * 
+ * Delete a specific package with provided identification scheme
+ * @param {String} identificationScheme is the pattern string to identify package
+ * @param {String} storeId is the store's Id wich own the package
  */
-router.delete('/:identificationScheme', function(req, res, next) {
-    let { identificationScheme } = req.params
-    let { storeId } = req.body
+router.delete('/:identificationScheme/:storeId', function(req, res, next) {
+    let { identificationScheme, storeId } = req.params
     storesDb.deactivatePack(identificationScheme, storeId).then((resp) => res.send(resp)).catch((err) => res.send(err))
 
 });

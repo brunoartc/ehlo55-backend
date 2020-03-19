@@ -13,7 +13,10 @@ var packageDb = require('./package_db')
  * 
  */
 
-
+/**
+* Generate a random string pattern with 0 and 1 with the provided length
+* @param {Number} length is the length of the generated pattern
+*/
 function makeRandomSchema(length) {
     var result = '';
     var characters = '10';
@@ -29,7 +32,9 @@ function makeRandomSchema(length) {
 
 /**
  * Insert new package into the system
- * @param {Pack} pack The new pack in store stock
+ * @param {String} packageId is the id of the package shipped to the store
+ * @param {String} storeId is the store Id
+ * @param {Number} quantity the number of packages delivered
  * 
  */
 async function insertNewPack(packageId, storeId, quantity) {
@@ -93,7 +98,11 @@ async function insertNewPack(packageId, storeId, quantity) {
     })
 }
 
-
+/**
+ * Hint the store's storage manager about what pack to get
+ * @param {String} storeId is the store Id
+ * 
+ */
 async function removeFromStockHint(storeId) {
     return new Promise(function (resolve, reject) {
         global.conn.collection("storePacks").find({ owner: ObjectId(storeId), active: true, validThru: { $gte: new Date() } }).sort({ validThru: 1 }).project({ identificationScheme: 1 }).toArray((err, packObjs) => {
@@ -109,7 +118,11 @@ async function removeFromStockHint(storeId) {
 
 }
 
-
+/**
+ * Deactivate package in store's storage
+ * @param {String} storeId is the store Id
+ * @param {String} packIdentificationScheme identify wich package to deactivate 
+ */
 async function deactivatePack(packIdentificationScheme, storeId) {
     console.log(packIdentificationScheme, storeId);
 

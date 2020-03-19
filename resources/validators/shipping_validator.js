@@ -1,3 +1,7 @@
+/**
+* Validates if a a transaction has completely happened
+* @param {transactions[]} transaction object to be validated
+*/
 async function validateTransactionObject(transactions) {
     return new Promise(function(resolve, reject) {
         transactions.forEach(element => {
